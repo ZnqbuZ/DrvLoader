@@ -15,7 +15,7 @@ inline Void MainForm::DisplayException(RSTATUS^ ex)
 {
     MessageBox::Show(
         ex,
-        TEXT("´íÎó"),
+        TEXT("é”™è¯¯"),
         MessageBoxButtons::OK,
         MessageBoxIcon::Error);
     Log(ex);
@@ -31,21 +31,21 @@ MainForm::MainForm(array<String^>^ args)
     } CatchDisplay(
         delete ret; \
         ret = nullptr; \
-        // ·ÀÖ¹ÄÚ´æÐ¹Â¶
+        // é˜²æ­¢å†…å­˜æ³„éœ²
         System::Environment::Exit(0););
 
     ActiveControl = txtSrvName;
 
-    Log("»¶Ó­Ê¹ÓÃDrvLoader");
+    Log("æ¬¢è¿Žä½¿ç”¨DrvLoader");
 
     if (args->Length > 0)
     {
         txtDrvPath->Text = args[0];
-        Log("¡£\r\n");
+        Log("ã€‚\r\n");
     }
     else
     {
-        Log("£¬ÇëÑ¡ÔñÇý¶¯³ÌÐòÎÄ¼þ/ÊäÈë·þÎñÃû¡£\r\n");
+        Log("ï¼Œè¯·é€‰æ‹©é©±åŠ¨ç¨‹åºæ–‡ä»¶/è¾“å…¥æœåŠ¡åã€‚\r\n");
     }
 }
 
@@ -59,7 +59,7 @@ MainForm::~MainForm()
 
 System::Void MainForm::MainForm_FormClosing(System::Object^ sender, System::Windows::Forms::FormClosingEventArgs^ e)
 {
-    Log("ÕýÔÚ½áÊø³ÌÐò¡­¡­");
+    Log("æ­£åœ¨ç»“æŸç¨‹åºâ€¦â€¦");
     if (chkAutoUnload->Checked)
     {
         SrvUtils::Clear();
@@ -86,7 +86,7 @@ System::Void MainForm::MainForm_DragDrop(System::Object^ sender, System::Windows
 System::Void MainForm::btnBrow_Click(System::Object^ sender, System::EventArgs^ e)
 {
     openFileDialog->InitialDirectory = "C:\\";
-    openFileDialog->Filter = "ËùÓÐÎÄ¼þ|*.*";
+    openFileDialog->Filter = "æ‰€æœ‰æ–‡ä»¶|*.*";
     if (openFileDialog->ShowDialog() == System::Windows::Forms::DialogResult::OK)
     {
         txtDrvPath->Text = openFileDialog->FileName;
@@ -97,9 +97,9 @@ System::Void MainForm::btnInst_Click(System::Object^ sender, System::EventArgs^ 
 {
     try
     {
-        Log("ÕýÔÚ°²×°Çý¶¯¡­¡­\r\n");
+        Log("æ­£åœ¨å®‰è£…é©±åŠ¨â€¦â€¦\r\n");
         ThrowIfFailed(SrvUtils::Create(drvPath, srvName));
-        Log("°²×°³É¹¦¡£·þÎñÃû£º{0}\r\n", srvName);
+        Log("å®‰è£…æˆåŠŸã€‚æœåŠ¡åï¼š{0}\r\n", srvName);
     } CatchDisplay();
 }
 
@@ -107,9 +107,9 @@ System::Void MainForm::btnStart_Click(System::Object^ sender, System::EventArgs^
 {
     try
     {
-        Log("ÕýÔÚÆô¶¯·þÎñ {0} ¡­¡­\r\n", srvName);
+        Log("æ­£åœ¨å¯åŠ¨æœåŠ¡ {0} â€¦â€¦\r\n", srvName);
         ThrowIfFailed(SrvUtils::Start(srvName));
-        Log("·þÎñ {0} ÒÑÆô¶¯¡£\r\n", srvName);
+        Log("æœåŠ¡ {0} å·²å¯åŠ¨ã€‚\r\n", srvName);
     } CatchDisplay();
 }
 
@@ -117,9 +117,9 @@ System::Void MainForm::btnStop_Click(System::Object^ sender, System::EventArgs^ 
 {
     try
     {
-        Log("ÕýÔÚÍ£Ö¹·þÎñ {0} ¡­¡­\r\n", srvName);
+        Log("æ­£åœ¨åœæ­¢æœåŠ¡ {0} â€¦â€¦\r\n", srvName);
         ThrowIfFailed(SrvUtils::Stop(srvName));
-        Log("·þÎñ {0} ÒÑÍ£Ö¹¡£\r\n", srvName);
+        Log("æœåŠ¡ {0} å·²åœæ­¢ã€‚\r\n", srvName);
     } CatchDisplay();
 }
 
@@ -127,19 +127,19 @@ System::Void MainForm::btnDel_Click(System::Object^ sender, System::EventArgs^ e
 {
     try
     {
-        Log("ÕýÔÚÉ¾³ý·þÎñ {0} ¡­¡­\r\n", srvName);
-        RSTATUS^ ret = (gcnew RSTATUS(SrvUtils::Delete(srvName)));
+        Log("æ­£åœ¨åˆ é™¤æœåŠ¡ {0} â€¦â€¦\r\n", srvName);
+        auto ret = (gcnew RSTATUS(SrvUtils::Delete(srvName)));
         switch (ret->ExitCode)
         {
-        case SUCCESS:
-            Log("·þÎñ {0} ÒÑÉ¾³ý¡£\r\n", srvName);
+        case ERROR_SUCCESS:
+            Log("æœåŠ¡ {0} å·²åˆ é™¤ã€‚\r\n", srvName);
             break;
         case ERROR_NEED_CONFIRM:
         {
-            System::Windows::Forms::DialogResult dialogResult =
+	        const System::Windows::Forms::DialogResult dialogResult =
                 MessageBox::Show(
-                    String::Format("Ö¸¶¨µÄ·þÎñ({0})ËÆºõ²»ÊÇÓÉ±¾³ÌÐò´´½¨µÄ¡£È·¶¨ÒªÉ¾³ýÂð£¿", srvName),
-                    "ÌáÊ¾",
+                    String::Format("æŒ‡å®šçš„æœåŠ¡({0})ä¼¼ä¹Žä¸æ˜¯ç”±æœ¬ç¨‹åºåˆ›å»ºçš„ã€‚ç¡®å®šè¦åˆ é™¤å—ï¼Ÿ", srvName),
+                    "æç¤º",
                     MessageBoxButtons::OKCancel,
                     MessageBoxIcon::Question);
             if (dialogResult == System::Windows::Forms::DialogResult::OK)
@@ -147,13 +147,13 @@ System::Void MainForm::btnDel_Click(System::Object^ sender, System::EventArgs^ e
                 try
                 {
                     ThrowIfFailed(SrvUtils::Delete(srvName, true));
-                    Log("·þÎñ {0} ÒÑÉ¾³ý¡£\r\n", srvName);
+                    Log("æœåŠ¡ {0} å·²åˆ é™¤ã€‚\r\n", srvName);
                     break;
                 } CatchDisplay();
             }
             else
             {
-                Log("É¾³ýÈ¡Ïû¡£\r\n");
+                Log("åˆ é™¤å–æ¶ˆã€‚\r\n");
                 break;
             }
         }
@@ -170,9 +170,9 @@ System::Void MainForm::txtSrvName_TextChanged(System::Object^ sender, System::Ev
 {
     srvName = txtSrvName->Text;
     btnInst->Enabled = drvPath.Length != 0 && srvName.Length != 0;
-    // ÎÒÒ²²»ÖªµÀÎªÊ²Ã´²»¿ÉÒÔÁ¬Ðø¸³Öµ
-    // ¿ÉÄÜÊÇÒòÎª±àÒëÆ÷°ÑÊôÐÔµÄsetµ±×öº¯Êýµ÷ÓÃ
-    // ¶øsetÃ»ÓÐ·µ»ØÖµ
+    // æˆ‘ä¹Ÿä¸çŸ¥é“ä¸ºä»€ä¹ˆä¸å¯ä»¥è¿žç»­èµ‹å€¼
+    // å¯èƒ½æ˜¯å› ä¸ºç¼–è¯‘å™¨æŠŠå±žæ€§çš„setå½“åšå‡½æ•°è°ƒç”¨
+    // è€Œsetæ²¡æœ‰è¿”å›žå€¼
     btnLookup->Enabled = srvName.Length != 0;
     btnStart->Enabled = srvName.Length != 0;
     btnStop->Enabled = srvName.Length != 0;
@@ -189,17 +189,14 @@ System::Void MainForm::btnLookup_Click(System::Object^ sender, System::EventArgs
 {
     try
     {
-        Log("ÕýÔÚ²éÑ¯¡­¡­\r\n");
-        RSTATUS^ ret = (gcnew RSTATUS(SrvUtils::Lookup(srvName)));
+        Log("æ­£åœ¨æŸ¥è¯¢â€¦â€¦\r\n");
+        auto ret = (gcnew RSTATUS(SrvUtils::Lookup(srvName)));
         if (!ret->Success)
         {
             throw ret;
         }
-        else
-        {
-            Log(ret);
-            delete ret;
-            ret = nullptr;
-        }
+        Log(ret);
+        delete ret;
+        ret = nullptr;
     } CatchDisplay();
 }

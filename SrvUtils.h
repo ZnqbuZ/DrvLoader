@@ -1,68 +1,14 @@
 #pragma once
-#pragma warning(disable : 4251)
 
 #include "windows.h"
 #include "stdio.h"
 #include "wchar.h"
 #include "string.h"
 #include "unordered_map"
-
-#define SUCCESS                                0L
-#define ERROR_UNKNOWN                      99999L
-#define ERROR_NO_MSG                       10001L
-#define ERROR_NEED_CONFIRM                 10002L
-/*
-* * Already defined in winerror.h
-**
-#define ERROR_PATH_NOT_FOUND                   3L
-#define ERROR_ACCESS_DENIED                    5L
-#define ERROR_INVALID_NAME                   123L
-#define ERROR_BAD_EXE_FORMAT                 193L
-#define ERROR_SERVICE_ALREADY_RUNNING       1056L
-#define ERROR_SERVICE_DISABLED              1058L
-#define ERROR_SERVICE_DOES_NOT_EXIST        1060L
-#define ERROR_SERVICE_CANNOT_ACCEPT_CTRL    1061L
-#define ERROR_SERVICE_NOT_ACTIVE            1062L
-#define ERROR_SERVICE_MARKED_FOR_DELETE     1072L
-#define ERROR_SERVICE_EXISTS                1073L
-*/
-
-#define __CONCAT(x, y) x##y
-#define CONCAT(x, y) __CONCAT(x, y)
-
-#ifdef _DEBUG
-#define DebugLog(msg, ...)                                              \
-    do                                                                  \
-    {                                                                   \
-        WCHAR CONCAT(__msg_, __LINE__)[MSG_BUF_SIZE];                   \
-        swprintf_s(CONCAT(__msg_, __LINE__), TEXT(msg), ##__VA_ARGS__); \
-        OutputDebugString(CONCAT(__msg_, __LINE__));                    \
-    } while (0)
-#else
-#define DebugLog
-#endif
-
-#define MSG_BUF_SIZE (size_t)1024
+#include "STATUS.h"
 
 namespace DrvLoader
 {
-    inline void AppendErrInfo(PWSTR msg, DWORD errCode, PWSTR end);
-
-    struct STATUS
-    {
-        DWORD exitCode;
-        WCHAR Msg[MSG_BUF_SIZE] = TEXT("");
-
-        STATUS(DWORD exitCode, OPTIONAL PCWSTR msg);
-        ~STATUS()
-        {
-            DebugLog("--------------------------------------------------------------\n");
-            DebugLog("STATUS destructed. Location: 0x%p\n", this);
-            DebugLog("--------------------------------------------------------------\n");
-        }
-        BOOL Success() { return exitCode == SUCCESS; }
-    };
-
     class SrvUtils
     {
     public:
@@ -76,7 +22,7 @@ namespace DrvLoader
 
     private:
         static STATUS OpenSrv(SC_HANDLE& phService, PWSTR srvName, OPTIONAL ULONG Access);
-        static VOID DelHandle(SC_HANDLE& hService);
+        static VOID DelHandle(const SC_HANDLE& hService);
 
         static SC_HANDLE hSCManager;
         static std::unordered_map<PWSTR, SC_HANDLE> hSrvMap;
@@ -84,6 +30,6 @@ namespace DrvLoader
         static std::unordered_map<DWORD, PCWSTR> expected_err;
         static std::unordered_map<DWORD, PCWSTR>::iterator errIter;
 
-        friend inline void AppendErrInfo(PWSTR msg, DWORD errCode, PWSTR end);
+        friend inline void AppendErrInfo(PWSTR msg, DWORD errCode, PCWSTR end);
     };
 } // namespace DrvLoader

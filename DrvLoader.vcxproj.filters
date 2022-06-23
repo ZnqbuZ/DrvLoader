@@ -27,6 +27,12 @@
     <ClCompile Include="binded_str.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="RSTATUS.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="STATUS.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainForm.h">
@@ -39,6 +45,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RSTATUS.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="STATUS.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
