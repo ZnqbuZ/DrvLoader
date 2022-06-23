@@ -2,548 +2,455 @@
 
 using namespace DrvLoader;
 
-std::unordered_map<DWORD, PCWSTR>               SrvUtils::expected_err = {
-{ERROR_PATH_NOT_FOUND,              TEXT("ÕÒ²»µ½·şÎñ¶ş½øÖÆÎÄ¼ş¡£")},
-{ERROR_ACCESS_DENIED,               TEXT("¾Ü¾ø·ÃÎÊ¡£")},
-{ERROR_INVALID_NAME,                TEXT("Ö¸¶¨µÄ·şÎñÃûÎŞĞ§¡£")},
-{ERROR_BAD_EXE_FORMAT,              TEXT("Ö¸¶¨µÄ¶ş½øÖÆÎÄ¼şÎŞĞ§¡£")},
-{ERROR_DEPENDENT_SERVICES_RUNNING,  TEXT("ÓĞÒÀÀµÓÚ´Ë·şÎñµÄ×é¼şÕıÔÚÔËĞĞ¡£")},
-{ERROR_SERVICE_ALREADY_RUNNING,     TEXT("·şÎñµÄÊµÀıÒÑÔÚÔËĞĞ¡£")},
-{ERROR_SERVICE_DISABLED,            TEXT("·şÎñÒÑ±»½ûÓÃ¡£")},
-{ERROR_SERVICE_DOES_NOT_EXIST,      TEXT("Ö¸¶¨µÄ·şÎñ²»´æÔÚ¡£")},
-{ERROR_SERVICE_CANNOT_ACCEPT_CTRL,  TEXT("·şÎñÎŞ·¨ÔÚ´ËÊ±½ÓÊÜ¿ØÖÆĞÅÏ¢¡£·şÎñ¿ÉÄÜÒÑÍ£Ö¹/ÕıÔÚÍ£Ö¹/ÕıÔÚÆô¶¯¡£")},
-{ERROR_SERVICE_NOT_ACTIVE,          TEXT("·şÎñÉĞÎ´Æô¶¯¡£")},
-{ERROR_SERVICE_MARKED_FOR_DELETE,   TEXT("·şÎñÒÑ±ê¼ÇÎªÉ¾³ı¡£")},
-{ERROR_NO_MSG,                      TEXT("")} };
-std::unordered_map<DWORD, PCWSTR>::iterator     SrvUtils::errIter;
-std::unordered_map<PWSTR, SC_HANDLE>            SrvUtils::hSrvMap;
-std::unordered_map<PWSTR, SC_HANDLE>::iterator  SrvUtils::srvIter;
+std::unordered_map<DWORD, PCWSTR> SrvUtils::expected_err = {
+	{ERROR_PATH_NOT_FOUND, TEXT("æ‰¾ä¸åˆ°æœåŠ¡äºŒè¿›åˆ¶æ–‡ä»¶ã€‚")},
+	{ERROR_ACCESS_DENIED, TEXT("æ‹’ç»è®¿é—®ã€‚")},
+	{ERROR_INVALID_NAME, TEXT("æŒ‡å®šçš„æœåŠ¡åæ— æ•ˆã€‚")},
+	{ERROR_BAD_EXE_FORMAT, TEXT("æŒ‡å®šçš„äºŒè¿›åˆ¶æ–‡ä»¶æ— æ•ˆã€‚")},
+	{ERROR_DEPENDENT_SERVICES_RUNNING, TEXT("æœ‰ä¾èµ–äºæ­¤æœåŠ¡çš„ç»„ä»¶æ­£åœ¨è¿è¡Œã€‚")},
+	{ERROR_SERVICE_ALREADY_RUNNING, TEXT("æœåŠ¡çš„å®ä¾‹å·²åœ¨è¿è¡Œã€‚")},
+	{ERROR_SERVICE_DISABLED, TEXT("æœåŠ¡å·²è¢«ç¦ç”¨ã€‚")},
+	{ERROR_SERVICE_DOES_NOT_EXIST, TEXT("æŒ‡å®šçš„æœåŠ¡ä¸å­˜åœ¨ã€‚")},
+	{ERROR_SERVICE_CANNOT_ACCEPT_CTRL, TEXT("æœåŠ¡æ— æ³•åœ¨æ­¤æ—¶æ¥å—æ§åˆ¶ä¿¡æ¯ã€‚æœåŠ¡å¯èƒ½å·²åœæ­¢/æ­£åœ¨åœæ­¢/æ­£åœ¨å¯åŠ¨ã€‚")},
+	{ERROR_SERVICE_NOT_ACTIVE, TEXT("æœåŠ¡å°šæœªå¯åŠ¨ã€‚")},
+	{ERROR_SERVICE_MARKED_FOR_DELETE, TEXT("æœåŠ¡å·²æ ‡è®°ä¸ºåˆ é™¤ã€‚")},
+	{ERROR_NO_MSG, TEXT("")}
+};
+std::unordered_map<DWORD, PCWSTR>::iterator SrvUtils::errIter;
+std::unordered_map<PWSTR, SC_HANDLE> SrvUtils::hSrvMap;
+std::unordered_map<PWSTR, SC_HANDLE>::iterator SrvUtils::srvIter;
 
 SC_HANDLE SrvUtils::hSCManager;
 
-#pragma region wcsapp
-
-template<typename P, typename Q, typename...R>
-inline void wcsapp(P p, Q q, R...rs)
-{
-    static_assert(0, "[wcsapp] Argument type mismatch.");
-}
-
-template<size_t __Size, typename...R>
-inline void wcsapp(WCHAR(&_Destination)[__Size], PCWSTR _Source, R..._res)
-{
-    wcscat_s(_Destination, _Source);
-    wcsapp(_Destination, _res...);
-}
-
-template<size_t __Size, typename...R>
-inline void wcsapp(WCHAR(&_Destination)[__Size], PWSTR _Source, R..._res)
-{
-    wcscat_s(_Destination, _Source);
-    wcsapp(_Destination, _res...);
-}
-
-template<size_t __Size>
-inline void wcsapp(WCHAR(&_Destination)[__Size], PCWSTR _Source)
-{
-    wcscat_s(_Destination, _Source);
-}
-
-template<size_t __Size>
-inline void wcsapp(WCHAR(&_Destination)[__Size], PWSTR _Source)
-{
-    wcscat_s(_Destination, _Source);
-}
-
-template<typename...R>
-inline void wcsapp(PWSTR(&_Destination), size_t _SizeInWords, PCWSTR _Source, R..._res)
-{
-    wcscat_s(_Destination, _SizeInWords, _Source);
-    wcsapp(_Destination, _SizeInWords - wcslen(_Source), _res...);
-}
-
-template<typename...R>
-inline void wcsapp(PWSTR(&_Destination), size_t _SizeInWords, PWSTR _Source, R..._res)
-{
-    wcscat_s(_Destination, _SizeInWords, _Source);
-    wcsapp(_Destination, _SizeInWords - wcslen(_Source), _res...);
-}
-
-template<>
-inline void wcsapp(PWSTR(&_Destination), size_t _SizeInWords, PCWSTR _Source)
-{
-    wcscat_s(_Destination, _SizeInWords, _Source);
-}
-
-template<>
-inline void wcsapp(PWSTR(&_Destination), size_t _SizeInWords, PWSTR _Source)
-{
-    wcscat_s(_Destination, _SizeInWords, _Source);
-}
-
-#pragma endregion
-
-inline void DrvLoader::AppendErrInfo(PWSTR msg, DWORD errCode, PWSTR end = TEXT("\r\n"))
-{
-    SrvUtils::errIter = SrvUtils::expected_err.find(errCode);
-    if (SrvUtils::errIter != SrvUtils::expected_err.end())
-    {
-        if (SrvUtils::errIter->first != ERROR_NO_MSG)
-        {
-            wcsapp(msg, MSG_BUF_SIZE, SrvUtils::errIter->second, end);
-        }
-    }
-    else
-    {
-        wcsapp(msg, MSG_BUF_SIZE, TEXT("Î´Öª´íÎó¡£"), end);
-    }
-}
-
-STATUS::STATUS(DWORD exitCode, OPTIONAL PCWSTR msg = TEXT(""))
-{
-    this->exitCode = exitCode;
-    wcscpy_s(this->Msg, msg);
-    if (!this->Success())
-    {
-        AppendErrInfo(this->Msg, exitCode);
-    }
-    DebugLog("--------------------------------------------------------------\n");
-    DebugLog("STATUS constructed. Location: 0x%p\n", this);
-    DebugLog("--------------------------------------------------------------\n");
-}
-
 STATUS SrvUtils::OpenSrv(SC_HANDLE& hService, PWSTR srvName, OPTIONAL ULONG Access = SERVICE_ALL_ACCESS)
 {
-    srvIter = hSrvMap.find(srvName);
-    if (srvIter != hSrvMap.end())
-    {
-        hService = srvIter->second;
-        return STATUS(SUCCESS);
-    }
-    hService = OpenService(hSCManager, srvName, Access);
-    if (hService == NULL)
-    {
-        return STATUS(GetLastError(), TEXT("´ò¿ª·şÎñÊ§°Ü£¬"));
-    }
-    return STATUS(SUCCESS);
+	srvIter = hSrvMap.find(srvName);
+	if (srvIter != hSrvMap.end())
+	{
+		hService = srvIter->second;
+		return STATUS(ERROR_SUCCESS);
+	}
+	hService = OpenService(hSCManager, srvName, Access);
+	if (hService == nullptr)
+	{
+		return STATUS(GetLastError(), TEXT("æ‰“å¼€æœåŠ¡å¤±è´¥ï¼Œ"));
+	}
+	return STATUS(ERROR_SUCCESS);
 }
 
-VOID SrvUtils::DelHandle(SC_HANDLE& hService)
+VOID SrvUtils::DelHandle(const SC_HANDLE& hService)
 {
-    for (srvIter = hSrvMap.begin(); srvIter != hSrvMap.end(); srvIter++)
-    {
-        if (srvIter->second == hService)
-        {
-            return;
-        }
-    }
-    CloseServiceHandle(hService);
+	for (srvIter = hSrvMap.begin(); srvIter != hSrvMap.end(); ++srvIter)
+	{
+		if (srvIter->second == hService)
+		{
+			return;
+		}
+	}
+	CloseServiceHandle(hService);
 }
 
 STATUS SrvUtils::OpenSCM()
 {
-    hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+	hSCManager = OpenSCManager(nullptr, nullptr, SC_MANAGER_CREATE_SERVICE);
 
-    if (hSCManager == NULL)
-    {
-        return STATUS(GetLastError(), TEXT("´ò¿ª·şÎñ¹ÜÀíÆ÷Ê§°Ü£¬"));
-    }
+	if (hSCManager == nullptr)
+	{
+		return STATUS(GetLastError(), TEXT("æ‰“å¼€æœåŠ¡ç®¡ç†å™¨å¤±è´¥ï¼Œ"));
+	}
 
-    return STATUS(SUCCESS);
+	return STATUS(ERROR_SUCCESS);
 }
 
 STATUS SrvUtils::Lookup(PWSTR srvName)
 {
-    DWORD errCode;
-    SC_HANDLE hService;
-    STATUS ret = OpenSrv(hService, srvName, SERVICE_QUERY_CONFIG | SERVICE_QUERY_STATUS);
-    if (!ret.Success())
-    {
-        return ret;
-    }
+	DWORD errCode;
+	SC_HANDLE hService;
+	STATUS ret = OpenSrv(hService, srvName, SERVICE_QUERY_CONFIG | SERVICE_QUERY_STATUS);
+	if (!ret.Success())
+	{
+		return ret;
+	}
 
-    DWORD  cbBytesNeeded = 0L;
-    if (
-        !QueryServiceConfig(
-            hService,
-            NULL,
-            0,
-            &cbBytesNeeded))
-    {
-        errCode = GetLastError();
-        if (errCode != ERROR_INSUFFICIENT_BUFFER)
-        {
-            DelHandle(hService);
-            return STATUS(errCode, TEXT("»ñÈ¡ĞÅÏ¢Ê§°Ü£¬"));
-        }
-    }
+	DWORD cbBytesNeeded = 0L;
+	if (
+		!QueryServiceConfig(
+			hService,
+			nullptr,
+			0,
+			&cbBytesNeeded))
+	{
+		errCode = GetLastError();
+		if (errCode != ERROR_INSUFFICIENT_BUFFER)
+		{
+			DelHandle(hService);
+			return STATUS(errCode, TEXT("è·å–ä¿¡æ¯å¤±è´¥ï¼Œ"));
+		}
+	}
 
-    DWORD cbBufSize = cbBytesNeeded;
-    LPQUERY_SERVICE_CONFIG pSrvConf = (LPQUERY_SERVICE_CONFIG)malloc(cbBufSize);
-    if (pSrvConf == NULL)
-    {
-        return STATUS(ERROR_UNKNOWN, TEXT("»ñÈ¡ĞÅÏ¢Ê±ÄÚ´æÉêÇëÊ§°Ü£¬"));
-    }
+	DWORD cbBufSize = cbBytesNeeded;
+	const auto pSrvConf = static_cast<LPQUERY_SERVICE_CONFIG>(malloc(cbBufSize));
+	if (pSrvConf == nullptr)
+	{
+		return STATUS(ERROR_UNKNOWN, TEXT("è·å–ä¿¡æ¯æ—¶å†…å­˜ç”³è¯·å¤±è´¥ï¼Œ"));
+	}
 
-    if (!QueryServiceConfig(hService, pSrvConf, cbBufSize, &cbBytesNeeded))
-    {
-        free(pSrvConf);
-        return STATUS(GetLastError(), TEXT("»ñÈ¡ĞÅÏ¢Ê§°Ü£¬"));
-    }
+	if (!QueryServiceConfig(hService, pSrvConf, cbBufSize, &cbBytesNeeded))
+	{
+		free(pSrvConf);
+		return STATUS(GetLastError(), TEXT("è·å–ä¿¡æ¯å¤±è´¥ï¼Œ"));
+	}
 
-    WCHAR errMsg[64];
-    if (
-        !QueryServiceConfig2(
-            hService,
-            SERVICE_CONFIG_DESCRIPTION,
-            NULL,
-            0,
-            &cbBytesNeeded))
-    {
-        errCode = GetLastError();
-        if (errCode != ERROR_INSUFFICIENT_BUFFER)
-        {
-            wcscpy_s(errMsg, TEXT("»ñÈ¡ÃèÊöÊ§°Ü£¬"));
-            goto SET_DESC_FAILED_MSG;
-        }
-    }
+	WCHAR errMsg[64];
+	if (
+		!QueryServiceConfig2(
+			hService,
+			SERVICE_CONFIG_DESCRIPTION,
+			nullptr,
+			0,
+			&cbBytesNeeded))
+	{
+		errCode = GetLastError();
+		if (errCode != ERROR_INSUFFICIENT_BUFFER)
+		{
+			wcscpy_s(errMsg, TEXT("è·å–æè¿°å¤±è´¥ï¼Œ"));
+			goto SET_DESC_FAILED_MSG;
+		}
+	}
 
-    cbBufSize = cbBytesNeeded;
-    LPSERVICE_DESCRIPTION pSrvDesc = (LPSERVICE_DESCRIPTION)malloc(cbBufSize);
-    if (pSrvDesc == NULL)
-    {
-        errCode = ERROR_UNKNOWN;
-        wcscpy_s(errMsg, TEXT("»ñÈ¡ÃèÊöĞÅÏ¢Ê±ÄÚ´æÉêÇëÊ§°Ü£¬"));
-        goto SET_DESC_FAILED_MSG;
-    }
+	cbBufSize = max(cbBytesNeeded, 8);
+	auto pSrvDesc = static_cast<LPSERVICE_DESCRIPTION>(malloc(cbBufSize));
+	if (pSrvDesc == nullptr)
+	{
+		errCode = ERROR_UNKNOWN;
+		wcscpy_s(errMsg, TEXT("è·å–æè¿°ä¿¡æ¯æ—¶å†…å­˜ç”³è¯·å¤±è´¥ï¼Œ"));
+		goto SET_DESC_FAILED_MSG;
+	}
 
-    if (
-        !QueryServiceConfig2(
-            hService,
-            SERVICE_CONFIG_DESCRIPTION,
-            (LPBYTE)pSrvDesc,
-            cbBufSize,
-            &cbBytesNeeded))
-    {
-        errCode = GetLastError();
-        free(pSrvDesc);
-        wcscpy_s(errMsg, TEXT("»ñÈ¡ÃèÊöÊ§°Ü£¬"));
-        goto SET_DESC_FAILED_MSG;
-    }
+	if (
+		!QueryServiceConfig2(
+			hService,
+			SERVICE_CONFIG_DESCRIPTION,
+			reinterpret_cast<LPBYTE>(pSrvDesc),
+			cbBufSize,
+			&cbBytesNeeded))
+	{
+		errCode = GetLastError();
+		free(pSrvDesc);
+		wcscpy_s(errMsg, TEXT("è·å–æè¿°å¤±è´¥ï¼Œ"));
+		goto SET_DESC_FAILED_MSG;
+	}
 
-    if (0)
-    {
-    SET_DESC_FAILED_MSG:
-        pSrvDesc = (LPSERVICE_DESCRIPTION)malloc(64 * sizeof(WCHAR));
-        pSrvDesc->lpDescription = (LPWSTR)(&pSrvDesc->lpDescription + 1);
-        wcscpy_s(pSrvDesc->lpDescription, 63, errMsg);
-        AppendErrInfo(pSrvDesc->lpDescription, errCode, TEXT(""));
-    }
+	if (false)
+	{
+	SET_DESC_FAILED_MSG:
+		pSrvDesc = static_cast<LPSERVICE_DESCRIPTION>(malloc(64 * sizeof(WCHAR)));
+		pSrvDesc->lpDescription = reinterpret_cast<LPWSTR>(&pSrvDesc->lpDescription + 1);
+		wcscpy_s(pSrvDesc->lpDescription, 63, errMsg);
+		AppendErrInfo(pSrvDesc->lpDescription, errCode, TEXT(""));
+	}
 
-    if (
-        !QueryServiceStatusEx(
-            hService,
-            SC_STATUS_PROCESS_INFO,
-            NULL,
-            0,
-            &cbBytesNeeded))
-    {
-        errCode = GetLastError();
-        if (errCode != ERROR_INSUFFICIENT_BUFFER)
-        {
-            wcscpy_s(errMsg, TEXT("»ñÈ¡×´Ì¬Ê§°Ü£¬"));
-            goto SET_STATUS_FAILED_MSG;
-        }
-    }
+	if (
+		!QueryServiceStatusEx(
+			hService,
+			SC_STATUS_PROCESS_INFO,
+			nullptr,
+			0,
+			&cbBytesNeeded))
+	{
+		errCode = GetLastError();
+		if (errCode != ERROR_INSUFFICIENT_BUFFER)
+		{
+			wcscpy_s(errMsg, TEXT("è·å–çŠ¶æ€å¤±è´¥ï¼Œ"));
+			goto SET_STATUS_FAILED_MSG;
+		}
+	}
 
-    cbBufSize = cbBytesNeeded;
-    LPSERVICE_STATUS_PROCESS pSrvStatus = (LPSERVICE_STATUS_PROCESS)malloc(cbBufSize);
-    if (pSrvStatus == NULL)
-    {
-        errCode = ERROR_UNKNOWN;
-        wcscpy_s(errMsg, TEXT("»ñÈ¡×´Ì¬ĞÅÏ¢Ê±ÄÚ´æÉêÇëÊ§°Ü£¬"));
-        goto SET_STATUS_FAILED_MSG;
-    }
+	cbBufSize = cbBytesNeeded;
+	auto pSrvStatus = static_cast<LPSERVICE_STATUS_PROCESS>(malloc(cbBufSize));
+	if (pSrvStatus == nullptr)
+	{
+		errCode = ERROR_UNKNOWN;
+		wcscpy_s(errMsg, TEXT("è·å–çŠ¶æ€ä¿¡æ¯æ—¶å†…å­˜ç”³è¯·å¤±è´¥ï¼Œ"));
+		goto SET_STATUS_FAILED_MSG;
+	}
 
-    if (
-        !QueryServiceStatusEx(
-            hService,
-            SC_STATUS_PROCESS_INFO,
-            (LPBYTE)pSrvStatus,
-            cbBufSize,
-            &cbBytesNeeded))
-    {
-        errCode = GetLastError();
-        free(pSrvStatus);
-        wcscpy_s(errMsg, TEXT("»ñÈ¡×´Ì¬Ê§°Ü£¬"));
-        goto SET_DESC_FAILED_MSG;
-    }
+	if (
+		!QueryServiceStatusEx(
+			hService,
+			SC_STATUS_PROCESS_INFO,
+			reinterpret_cast<LPBYTE>(pSrvStatus),
+			cbBufSize,
+			&cbBytesNeeded))
+	{
+		errCode = GetLastError();
+		free(pSrvStatus);
+		wcscpy_s(errMsg, TEXT("è·å–çŠ¶æ€å¤±è´¥ï¼Œ"));
+		goto SET_DESC_FAILED_MSG;
+	}
 
-    if (0)
-    {
-    SET_STATUS_FAILED_MSG:
-        pSrvStatus = (LPSERVICE_STATUS_PROCESS)malloc(sizeof(SERVICE_STATUS_PROCESS));
-        pSrvStatus->dwCurrentState = 0;
-        pSrvStatus->dwProcessId = 0;
-        AppendErrInfo(errMsg, errCode, TEXT(""));
-    }
+	if (false)
+	{
+	SET_STATUS_FAILED_MSG:
+		pSrvStatus = static_cast<LPSERVICE_STATUS_PROCESS>(malloc(sizeof(SERVICE_STATUS_PROCESS)));
+		pSrvStatus->dwCurrentState = 0;
+		pSrvStatus->dwProcessId = 0;
+		AppendErrInfo(errMsg, errCode, TEXT(""));
+	}
 
-    WCHAR srvConf[MSG_BUF_SIZE];
-    LPSTR lpServiceType, lpStartType, lpErrorControl;
-    LPWSTR lpCurrentState;
+	WCHAR srvConf[MSG_BUF_SIZE];
+	LPCSTR lpServiceType, lpStartType, lpErrorControl;
+	LPCWSTR lpCurrentState;
 
-    switch (pSrvConf->dwServiceType)
-    {
-    case SERVICE_FILE_SYSTEM_DRIVER:
-        lpServiceType = "SERVICE_FILE_SYSTEM_DRIVER";
-        break;
-    case SERVICE_KERNEL_DRIVER:
-        lpServiceType = "SERVICE_KERNEL_DRIVER";
-        break;
-    case SERVICE_WIN32_OWN_PROCESS:
-        lpServiceType = "SERVICE_WIN32_OWN_PROCESS";
-        break;
-    case SERVICE_WIN32_SHARE_PROCESS:
-        lpServiceType = "SERVICE_WIN32_SHARE_PROCESS";
-        break;
-    case SERVICE_INTERACTIVE_PROCESS:
-        lpServiceType = "SERVICE_INTERACTIVE_PROCESS";
-        break;
-    default:
-        lpServiceType = "UNKNOWN";
-        break;
-    }
-    switch (pSrvConf->dwStartType)
-    {
-    case SERVICE_AUTO_START:
-        lpStartType = "SERVICE_AUTO_START";
-        break;
-    case SERVICE_BOOT_START:
-        lpStartType = "SERVICE_BOOT_START";
-        break;
-    case SERVICE_DEMAND_START:
-        lpStartType = "SERVICE_DEMAND_START";
-        break;
-    case SERVICE_DISABLED:
-        lpStartType = "SERVICE_DISABLED";
-        break;
-    case SERVICE_SYSTEM_START:
-        lpStartType = "SERVICE_SYSTEM_START";
-        break;
-    default:
-        lpStartType = "";
-        break;
-    }
-    switch (pSrvConf->dwErrorControl)
-    {
-    case SERVICE_ERROR_CRITICAL:
-        lpErrorControl = "SERVICE_ERROR_CRITICAL";
-        break;
-    case SERVICE_ERROR_IGNORE:
-        lpErrorControl = "SERVICE_ERROR_IGNORE";
-        break;
-    case SERVICE_ERROR_NORMAL:
-        lpErrorControl = "SERVICE_ERROR_NORMAL";
-        break;
-    case SERVICE_ERROR_SEVERE:
-        lpErrorControl = "SERVICE_ERROR_SEVERE";
-        break;
-    default:
-        lpErrorControl = "";
-        break;
-    }
-    switch (pSrvStatus->dwCurrentState)
-    {
-    case SERVICE_CONTINUE_PENDING:
-        lpCurrentState = TEXT("ÕıÔÚ»Ö¸´");
-        break;
-    case SERVICE_PAUSE_PENDING:
-        lpCurrentState = TEXT("ÕıÔÚÔİÍ£");
-        break;
-    case SERVICE_PAUSED:
-        lpCurrentState = TEXT("ÒÑÔİÍ£");
-        break;
-    case SERVICE_RUNNING:
-        lpCurrentState = TEXT("ÕıÔÚÔËĞĞ");
-        break;
-    case SERVICE_START_PENDING:
-        lpCurrentState = TEXT("ÕıÔÚÆô¶¯");
-        break;
-    case SERVICE_STOP_PENDING:
-        lpCurrentState = TEXT("ÕıÔÚÍ£Ö¹");
-        break;
-    case SERVICE_STOPPED:
-        lpCurrentState = TEXT("ÒÑÍ£Ö¹");
-        break;
-    default:
-        lpCurrentState = errMsg;
-        break;
-    }
+	switch (pSrvConf->dwServiceType)
+	{
+	case SERVICE_FILE_SYSTEM_DRIVER:
+		lpServiceType = "SERVICE_FILE_SYSTEM_DRIVER";
+		break;
+	case SERVICE_KERNEL_DRIVER:
+		lpServiceType = "SERVICE_KERNEL_DRIVER";
+		break;
+	case SERVICE_WIN32_OWN_PROCESS:
+		lpServiceType = "SERVICE_WIN32_OWN_PROCESS";
+		break;
+	case SERVICE_WIN32_SHARE_PROCESS:
+		lpServiceType = "SERVICE_WIN32_SHARE_PROCESS";
+		break;
+	case SERVICE_INTERACTIVE_PROCESS:
+		lpServiceType = "SERVICE_INTERACTIVE_PROCESS";
+		break;
+	default:
+		lpServiceType = "UNKNOWN";
+		break;
+	}
+	switch (pSrvConf->dwStartType)
+	{
+	case SERVICE_AUTO_START:
+		lpStartType = "SERVICE_AUTO_START";
+		break;
+	case SERVICE_BOOT_START:
+		lpStartType = "SERVICE_BOOT_START";
+		break;
+	case SERVICE_DEMAND_START:
+		lpStartType = "SERVICE_DEMAND_START";
+		break;
+	case SERVICE_DISABLED:
+		lpStartType = "SERVICE_DISABLED";
+		break;
+	case SERVICE_SYSTEM_START:
+		lpStartType = "SERVICE_SYSTEM_START";
+		break;
+	default:
+		lpStartType = "";
+		break;
+	}
+	switch (pSrvConf->dwErrorControl)
+	{
+	case SERVICE_ERROR_CRITICAL:
+		lpErrorControl = "SERVICE_ERROR_CRITICAL";
+		break;
+	case SERVICE_ERROR_IGNORE:
+		lpErrorControl = "SERVICE_ERROR_IGNORE";
+		break;
+	case SERVICE_ERROR_NORMAL:
+		lpErrorControl = "SERVICE_ERROR_NORMAL";
+		break;
+	case SERVICE_ERROR_SEVERE:
+		lpErrorControl = "SERVICE_ERROR_SEVERE";
+		break;
+	default:
+		lpErrorControl = "";
+		break;
+	}
+	switch (pSrvStatus->dwCurrentState)
+	{
+	case SERVICE_CONTINUE_PENDING:
+		lpCurrentState = TEXT("æ­£åœ¨æ¢å¤");
+		break;
+	case SERVICE_PAUSE_PENDING:
+		lpCurrentState = TEXT("æ­£åœ¨æš‚åœ");
+		break;
+	case SERVICE_PAUSED:
+		lpCurrentState = TEXT("å·²æš‚åœ");
+		break;
+	case SERVICE_RUNNING:
+		lpCurrentState = TEXT("æ­£åœ¨è¿è¡Œ");
+		break;
+	case SERVICE_START_PENDING:
+		lpCurrentState = TEXT("æ­£åœ¨å¯åŠ¨");
+		break;
+	case SERVICE_STOP_PENDING:
+		lpCurrentState = TEXT("æ­£åœ¨åœæ­¢");
+		break;
+	case SERVICE_STOPPED:
+		lpCurrentState = TEXT("å·²åœæ­¢");
+		break;
+	default:
+		lpCurrentState = errMsg;
+		break;
+	}
 
-    for (PWCHAR ptr = pSrvConf->lpDependencies; ptr < pSrvConf->lpServiceStartName; ptr++)
-    {
-        if (*ptr == L'\0')
-        {
-            if (*(ptr + 1) != L'\0')
-            {
-                *ptr = L',';
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
+	for (PWCHAR ptr = pSrvConf->lpDependencies; ptr < pSrvConf->lpServiceStartName; ptr++)
+	{
+		if (*ptr == L'\0')
+		{
+			if (*(ptr + 1) != L'\0')
+			{
+				*ptr = L',';
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
 
-    swprintf_s(
-        srvConf,
-        L"·şÎñÃû³Æ£º%ls\r\n"
-        L"ÏÔÊ¾Ãû³Æ£º%ls\r\n"
-        L"ÀàĞÍ£º%hs\r\n"
-        L"ÃèÊö£º%ls\r\n"
-        L"¿ÉÖ´ĞĞÎÄ¼şµÄÂ·¾¶£º%ls\r\n"
-        L"Æô¶¯ÀàĞÍ£º%hs\r\n"
-        L"×´Ì¬£º%ls\r\n"
-        L"PID£º%d%hs\r\n"
-        L"´íÎó¿ØÖÆ£º%hs\r\n"
-        L"µÇÂ¼Éí·İ£º%ls\r\n"
-        L"·Ö×é£º%ls\r\n"
-        L"×éÄÚ±êÊ¶£º%d%hs\r\n"
-        L"ÒÀÀµÏî£º%ls\r\n",
-        srvName,
-        pSrvConf->lpDisplayName,
-        lpServiceType,
-        pSrvDesc->lpDescription == NULL ? L"" : pSrvDesc->lpDescription,
-        pSrvConf->lpBinaryPathName,
-        lpStartType,
-        lpCurrentState,
-        pSrvStatus->dwProcessId,
-        pSrvStatus->dwProcessId == 0 ? " (N/A)" : "",
-        lpErrorControl,
-        pSrvConf->lpServiceStartName,
-        pSrvConf->lpLoadOrderGroup == NULL ? L"" : pSrvConf->lpLoadOrderGroup,
-        pSrvConf->dwTagId,
-        pSrvConf->lpLoadOrderGroup == NULL ? " (N/A)" : "",
-        pSrvConf->lpDependencies == NULL ? L"" : pSrvConf->lpDependencies);
+	swprintf_s(
+		srvConf,
+		L"æœåŠ¡åç§°ï¼š%ls\r\n"
+		L"æ˜¾ç¤ºåç§°ï¼š%ls\r\n"
+		L"ç±»å‹ï¼š%hs\r\n"
+		L"æè¿°ï¼š%ls\r\n"
+		L"å¯æ‰§è¡Œæ–‡ä»¶çš„è·¯å¾„ï¼š%ls\r\n"
+		L"å¯åŠ¨ç±»å‹ï¼š%hs\r\n"
+		L"çŠ¶æ€ï¼š%ls\r\n"
+		L"PIDï¼š%d%hs\r\n"
+		L"é”™è¯¯æ§åˆ¶ï¼š%hs\r\n"
+		L"ç™»å½•èº«ä»½ï¼š%ls\r\n"
+		L"åˆ†ç»„ï¼š%ls\r\n"
+		L"ç»„å†…æ ‡è¯†ï¼š%d%hs\r\n"
+		L"ä¾èµ–é¡¹ï¼š%ls\r\n",
+		srvName,
+		pSrvConf->lpDisplayName,
+		lpServiceType,
+		pSrvDesc->lpDescription == nullptr ? L"" : pSrvDesc->lpDescription,
+		pSrvConf->lpBinaryPathName,
+		lpStartType,
+		lpCurrentState,
+		pSrvStatus->dwProcessId,
+		pSrvStatus->dwProcessId == 0 ? " (N/A)" : "",
+		lpErrorControl,
+		pSrvConf->lpServiceStartName,
+		pSrvConf->lpLoadOrderGroup == nullptr ? L"" : pSrvConf->lpLoadOrderGroup,
+		pSrvConf->dwTagId,
+		pSrvConf->lpLoadOrderGroup == nullptr ? " (N/A)" : "",
+		pSrvConf->lpDependencies == nullptr ? L"" : pSrvConf->lpDependencies);
 
-    return STATUS(SUCCESS, srvConf);
+	return STATUS(ERROR_SUCCESS, srvConf);
 }
 
 STATUS SrvUtils::Create(PWSTR drvPath, PWSTR srvName)
 {
-    SC_HANDLE hService;
+	SC_HANDLE hService = CreateService(
+		hSCManager,
+		srvName,
+		srvName,
+		SERVICE_ALL_ACCESS,
+		SERVICE_KERNEL_DRIVER,
+		SERVICE_DEMAND_START,
+		SERVICE_ERROR_IGNORE,
+		drvPath,
+		nullptr, nullptr, nullptr, nullptr, nullptr);
 
-    hService =
-        CreateService(
-            hSCManager,
-            srvName,
-            srvName,
-            SERVICE_ALL_ACCESS,
-            SERVICE_KERNEL_DRIVER,
-            SERVICE_DEMAND_START,
-            SERVICE_ERROR_IGNORE,
-            drvPath,
-            NULL, NULL, NULL, NULL, NULL);
+	if (hService == nullptr)
+	{
+		const DWORD errCode = GetLastError();
 
-    if (hService == NULL)
-    {
-        DWORD errCode = GetLastError();
-        WCHAR msg[MSG_BUF_SIZE];
+		if (errCode == ERROR_SERVICE_EXISTS)
+		{
+			WCHAR msg[MSG_BUF_SIZE];
+			wcscpy_s(msg, TEXT("åˆ›å»ºæœåŠ¡å¤±è´¥ï¼ŒæŒ‡å®šçš„æœåŠ¡åå·²è¢«ä»¥ä¸‹æœåŠ¡å ç”¨ï¼š\r\n"));
+			wcsapp(msg, Lookup(srvName).Msg);
+			return STATUS(ERROR_NO_MSG, msg);
+		}
 
-        if (errCode == ERROR_SERVICE_EXISTS)
-        {
-            wcscpy_s(msg, TEXT("´´½¨·şÎñÊ§°Ü£¬Ö¸¶¨µÄ·şÎñÃûÒÑ±»ÒÔÏÂ·şÎñÕ¼ÓÃ£º\r\n"));
-            wcsapp(msg, Lookup(srvName).Msg);
-            return STATUS(ERROR_NO_MSG, msg);
-        }
+		return STATUS(GetLastError());
+	}
 
-        return STATUS(GetLastError());
-    }
+	hSrvMap.insert(std::make_pair(srvName, hService));
 
-    hSrvMap.insert(std::make_pair(srvName, hService));
-
-    DelHandle(hService);
-    return STATUS(SUCCESS);
+	DelHandle(hService);
+	return STATUS(ERROR_SUCCESS);
 }
 
 STATUS SrvUtils::Start(PWSTR srvName)
 {
-    SC_HANDLE hService;
-    STATUS ret = OpenSrv(hService, srvName, SERVICE_START);
-    if (!ret.Success())
-    {
-        return ret;
-    }
+	SC_HANDLE hService;
+	STATUS ret = OpenSrv(hService, srvName, SERVICE_START);
+	if (!ret.Success())
+	{
+		return ret;
+	}
 
-    if (!StartService(hService, NULL, NULL))
-    {
-        DelHandle(hService);
-        return STATUS(GetLastError(), TEXT("Æô¶¯Ê§°Ü£¬"));
-    }
+	if (!StartService(hService, NULL, nullptr))
+	{
+		DelHandle(hService);
+		return STATUS(GetLastError(), TEXT("å¯åŠ¨å¤±è´¥ï¼Œ"));
+	}
 
-    DelHandle(hService);
-    return STATUS(SUCCESS);
+	DelHandle(hService);
+	return STATUS(ERROR_SUCCESS);
 }
 
 STATUS SrvUtils::Stop(PWSTR srvName, OPTIONAL BOOL force)
 {
-    SC_HANDLE hService;
-    STATUS ret = OpenSrv(hService, srvName, SERVICE_STOP);
-    if (!ret.Success())
-    {
-        return ret;
-    }
+	SC_HANDLE hService;
+	STATUS ret = OpenSrv(hService, srvName, SERVICE_STOP);
+	if (!ret.Success())
+	{
+		return ret;
+	}
 
-    SERVICE_STATUS srvStatus = { 0 };
+	SERVICE_STATUS srvStatus = {0};
 
-    if (!ControlService(hService, SERVICE_CONTROL_STOP, &srvStatus))
-    {
-        DelHandle(hService);
-        return STATUS(GetLastError(), TEXT("Í£Ö¹Ê§°Ü£¬"));
-    }
+	if (!ControlService(hService, SERVICE_CONTROL_STOP, &srvStatus))
+	{
+		DelHandle(hService);
+		return STATUS(GetLastError(), TEXT("åœæ­¢å¤±è´¥ï¼Œ"));
+	}
 
-    DelHandle(hService);
-    return STATUS(SUCCESS);
+	DelHandle(hService);
+	return STATUS(ERROR_SUCCESS);
 }
 
 STATUS SrvUtils::Delete(PWSTR srvName, OPTIONAL BOOL force)
 {
-    SC_HANDLE hService;
-    STATUS ret = OpenSrv(hService, srvName, DELETE);
-    if (!ret.Success())
-    {
-        return ret;
-    }
+	SC_HANDLE hService;
+	STATUS ret = OpenSrv(hService, srvName, DELETE);
+	if (!ret.Success())
+	{
+		return ret;
+	}
 
-    if (!force && hSrvMap.find(srvName) == hSrvMap.end())
-    {
-        return STATUS(ERROR_NEED_CONFIRM, TEXT("É¾³ı²Ù×÷ĞèÒªÈ·ÈÏ¡£"));
-    }
+	if (!force && hSrvMap.find(srvName) == hSrvMap.end())
+	{
+		return STATUS(ERROR_NEED_CONFIRM, TEXT("åˆ é™¤æ“ä½œéœ€è¦ç¡®è®¤ã€‚"));
+	}
 
-    if (!DeleteService(hService))
-    {
-        DelHandle(hService);
-        return STATUS(GetLastError(), TEXT("É¾³ıÊ§°Ü£¬"));
-    }
-    if (hSrvMap.find(srvName) != hSrvMap.end())
-    {
-        hSrvMap.erase(srvName);
-    }
-    DelHandle(hService);
-    return STATUS(SUCCESS);
+	if (!DeleteService(hService))
+	{
+		DelHandle(hService);
+		return STATUS(GetLastError(), TEXT("åˆ é™¤å¤±è´¥ï¼Œ"));
+	}
+	if (hSrvMap.find(srvName) != hSrvMap.end())
+	{
+		hSrvMap.erase(srvName);
+	}
+	DelHandle(hService);
+	return STATUS(ERROR_SUCCESS);
 }
 
 STATUS SrvUtils::Clear()
 {
-    SERVICE_STATUS srvStatus = { 0 };
-    for (srvIter = hSrvMap.begin(); srvIter != hSrvMap.end(); srvIter++)
-    {
-        ControlService(srvIter->second, SERVICE_CONTROL_STOP, &srvStatus);
-        DeleteService(srvIter->second);
-        CloseServiceHandle(srvIter->second);
-    }
-    CloseServiceHandle(hSCManager);
-    hSrvMap.clear();
+	SERVICE_STATUS srvStatus = {0};
+	for (srvIter = hSrvMap.begin(); srvIter != hSrvMap.end(); ++srvIter)
+	{
+		ControlService(srvIter->second, SERVICE_CONTROL_STOP, &srvStatus);
+		DeleteService(srvIter->second);
+		CloseServiceHandle(srvIter->second);
+	}
+	CloseServiceHandle(hSCManager);
+	hSrvMap.clear();
 
-    return STATUS(SUCCESS);
+	return STATUS(ERROR_SUCCESS);
 }

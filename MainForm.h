@@ -1,115 +1,19 @@
 #pragma once
 #include "SrvUtils.h"
 #include "binded_str.h"
-
-// ×î´óÂ·¾¶³¤¶È
-#define __MAX_PATH__ 32768L
-// ×î´ó·şÎñÃû³¤¶È
-#define __MAX_NAME__ 256L
-
-#define ThrowIfFailed(x)                         \
-    do{                                          \
-        RSTATUS^ CONCAT(__ret_, __LINE__) = (gcnew RSTATUS(x));   \
-        if (!CONCAT(__ret_, __LINE__)->Success) \
-        {                                        \
-            throw CONCAT(__ret_, __LINE__);      \
-        }                                        \
-    delete CONCAT(__ret_, __LINE__);            \
-    CONCAT(__ret_, __LINE__) = nullptr;         \
-    }while(0)
-
-#define CatchDisplay(...)  \
-  catch (RSTATUS^ ret)     \
-  {                        \
-    DisplayException(ret); \
-    __VA_ARGS__            \
-    delete ret;            \
-    ret = nullptr;         \
-  }                        \
-  do                       \
-  {                        \
-  } while (0) // ±£Ö¤Ä©Î²ĞèÒª·ÖºÅ
-
-#define __LEFT_BRACKET (
-#define __RIGHT_BRACKET )
-
-#define __DEL_COMMA(...) , ##__VA_ARGS__
-
-#define __SELECT_ARG32(                     \
-    _0, _1, _2, _3, _4, _5, _6, _7,         \
-    _8, _9, _10, _11, _12, _13, _14, _15,   \
-    _16, _17, _18, _19, _20, _21, _22, _23, \
-    _24, _25, _26, _27, _28, _29, _30, _31, ...) _31
-
-#define __SELECT_FUN(_0, _1, ...)       \
-    __SELECT_ARG32 __LEFT_BRACKET       \
-        __DEL_COMMA(__VA_ARGS__),       \
-        _1, _1, _1, _1, _1, _1, _1, _1, \
-        _1, _1, _1, _1, _1, _1, _1, _1, \
-        _1, _1, _1, _1, _1, _1, _1, _1, \
-        _1, _1, _1, _1, _1, _1, _0,     \
-        __RIGHT_BRACKET
-
-#define __LogTo0(x, msg) (x->AppendText(msg))
-#define __LogTo1(x, msg, ...) (x->AppendText(System::String::Format(msg, __VA_ARGS__)))
-#define Log(msg, ...)                             \
-    __SELECT_FUN(__LogTo0, __LogTo1, __VA_ARGS__) \
-    (txtLog, msg, __VA_ARGS__)
+#include "RSTATUS.h"
 
 namespace DrvLoader
 {
-
-    using namespace System;
+	using namespace System;
     using namespace System::ComponentModel;
     using namespace System::Collections;
     using namespace System::Windows::Forms;
     using namespace System::Data;
     using namespace System::Drawing;
 
-    public
-    ref class RSTATUS
-    {
-    public:
-        RSTATUS(STATUS& source)
-        {
-            exitCode = source.exitCode;
-            msg = gcnew String(source.Msg);
-            DebugLog("--------------------------------------------------------------\n");
-            DebugLog("RSTATUS constructed by: 0x%p. Loaction: 0x%p\n", &source, this);
-            DebugLog("--------------------------------------------------------------\n");
-        }
-        ~RSTATUS()
-        {
-            DebugLog("--------------------------------------------------------------\n");
-            DebugLog("RSTATUS destructed. Location: 0x%p\n", this);
-            DebugLog("--------------------------------------------------------------\n");
-            delete msg;
-        }
-        property bool Success
-        {
-            bool get()
-            {
-                return exitCode == SUCCESS;
-            }
-        }
-        property DWORD ExitCode
-        {
-            DWORD get()
-            {
-                return exitCode;
-            }
-        }
-        operator String ^ ()
-        {
-            return msg;
-        }
-    private:
-        DWORD exitCode;
-        String^ msg;
-    };
-
     /// <summary>
-    /// MainForm ÕªÒª
+    /// MainForm æ‘˜è¦
     /// </summary>
     public
     ref class MainForm : public System::Windows::Forms::Form
@@ -119,7 +23,7 @@ namespace DrvLoader
 
     protected:
         /// <summary>
-        /// ÇåÀíËùÓĞÕıÔÚÊ¹ÓÃµÄ×ÊÔ´¡£
+        /// æ¸…ç†æ‰€æœ‰æ­£åœ¨ä½¿ç”¨çš„èµ„æºã€‚
         /// </summary>
         ~MainForm();
 
@@ -143,18 +47,19 @@ namespace DrvLoader
     private:System::Windows::Forms::CheckBox^ chkAutoUnload;
     private:
         /// <summary>
-        /// ±ØĞèµÄÉè¼ÆÆ÷±äÁ¿¡£
+        /// å¿…éœ€çš„è®¾è®¡å™¨å˜é‡ã€‚
         /// </summary>
         System::ComponentModel::Container^ components;
 
 #pragma region Windows Form Designer generated code
         /// <summary>
-        /// Éè¼ÆÆ÷Ö§³ÖËùĞèµÄ·½·¨ - ²»ÒªĞŞ¸Ä
-        /// Ê¹ÓÃ´úÂë±à¼­Æ÷ĞŞ¸Ä´Ë·½·¨µÄÄÚÈİ¡£
+        /// è®¾è®¡å™¨æ”¯æŒæ‰€éœ€çš„æ–¹æ³• - ä¸è¦ä¿®æ”¹
+        /// ä½¿ç”¨ä»£ç ç¼–è¾‘å™¨ä¿®æ”¹æ­¤æ–¹æ³•çš„å†…å®¹ã€‚
         /// </summary>
         void InitializeComponent(void)
         {
-            System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(MainForm::typeid));
+	        System::ComponentModel::ComponentResourceManager^ resources = (gcnew
+		        System::ComponentModel::ComponentResourceManager(MainForm::typeid));
             this->lblDrvPath = (gcnew System::Windows::Forms::Label());
             this->btnBrow = (gcnew System::Windows::Forms::Button());
             this->btnInst = (gcnew System::Windows::Forms::Button());
@@ -190,7 +95,7 @@ namespace DrvLoader
             this->lblDrvPath->Name = L"lblDrvPath";
             this->lblDrvPath->Size = System::Drawing::Size(86, 24);
             this->lblDrvPath->TabIndex = 0;
-            this->lblDrvPath->Text = L"Çı¶¯ÎÄ¼ş:";
+            this->lblDrvPath->Text = L"é©±åŠ¨æ–‡ä»¶:";
             //
             // btnBrow
             //
@@ -203,7 +108,7 @@ namespace DrvLoader
             this->btnBrow->Name = L"btnBrow";
             this->btnBrow->Size = System::Drawing::Size(71, 34);
             this->btnBrow->TabIndex = 2;
-            this->btnBrow->Text = L"ä¯ÀÀ¡­";
+            this->btnBrow->Text = L"æµè§ˆâ€¦";
             this->btnBrow->UseVisualStyleBackColor = true;
             this->btnBrow->Click += gcnew System::EventHandler(this, &MainForm::btnBrow_Click);
             //
@@ -219,7 +124,7 @@ namespace DrvLoader
             this->btnInst->Name = L"btnInst";
             this->btnInst->Size = System::Drawing::Size(56, 34);
             this->btnInst->TabIndex = 3;
-            this->btnInst->Text = L"°²×°";
+            this->btnInst->Text = L"å®‰è£…";
             this->btnInst->UseVisualStyleBackColor = true;
             this->btnInst->Click += gcnew System::EventHandler(this, &MainForm::btnInst_Click);
             //
@@ -235,7 +140,7 @@ namespace DrvLoader
             this->btnStart->Name = L"btnStart";
             this->btnStart->Size = System::Drawing::Size(56, 34);
             this->btnStart->TabIndex = 4;
-            this->btnStart->Text = L"Æô¶¯";
+            this->btnStart->Text = L"å¯åŠ¨";
             this->btnStart->UseVisualStyleBackColor = true;
             this->btnStart->Click += gcnew System::EventHandler(this, &MainForm::btnStart_Click);
             //
@@ -251,7 +156,7 @@ namespace DrvLoader
             this->btnStop->Name = L"btnStop";
             this->btnStop->Size = System::Drawing::Size(56, 34);
             this->btnStop->TabIndex = 5;
-            this->btnStop->Text = L"Í£Ö¹";
+            this->btnStop->Text = L"åœæ­¢";
             this->btnStop->UseVisualStyleBackColor = true;
             this->btnStop->Click += gcnew System::EventHandler(this, &MainForm::btnStop_Click);
             //
@@ -267,7 +172,7 @@ namespace DrvLoader
             this->btnDel->Name = L"btnDel";
             this->btnDel->Size = System::Drawing::Size(56, 34);
             this->btnDel->TabIndex = 6;
-            this->btnDel->Text = L"Ğ¶ÔØ";
+            this->btnDel->Text = L"å¸è½½";
             this->btnDel->UseVisualStyleBackColor = true;
             this->btnDel->Click += gcnew System::EventHandler(this, &MainForm::btnDel_Click);
             //
@@ -281,7 +186,7 @@ namespace DrvLoader
             this->lblSrvName->Name = L"lblSrvName";
             this->lblSrvName->Size = System::Drawing::Size(68, 24);
             this->lblSrvName->TabIndex = 7;
-            this->lblSrvName->Text = L"·şÎñÃû:";
+            this->lblSrvName->Text = L"æœåŠ¡å:";
             //
             // txtSrvName
             //
@@ -368,7 +273,7 @@ namespace DrvLoader
             this->btnLookup->Name = L"btnLookup";
             this->btnLookup->Size = System::Drawing::Size(56, 34);
             this->btnLookup->TabIndex = 9;
-            this->btnLookup->Text = L"²éÑ¯";
+            this->btnLookup->Text = L"æŸ¥è¯¢";
             this->btnLookup->UseVisualStyleBackColor = true;
             this->btnLookup->Click += gcnew System::EventHandler(this, &MainForm::btnLookup_Click);
             //
@@ -419,7 +324,7 @@ namespace DrvLoader
             this->chkAutoUnload->Name = L"chkAutoUnload";
             this->chkAutoUnload->Size = System::Drawing::Size(262, 29);
             this->chkAutoUnload->TabIndex = 5;
-            this->chkAutoUnload->Text = L"ÍË³öÊ±×Ô¶¯Ğ¶ÔØ°²×°µÄÇı¶¯";
+            this->chkAutoUnload->Text = L"é€€å‡ºæ—¶è‡ªåŠ¨å¸è½½å®‰è£…çš„é©±åŠ¨";
             this->chkAutoUnload->UseVisualStyleBackColor = true;
             //
             // MainForm
