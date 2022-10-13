@@ -1,9 +1,9 @@
-#include "MainForm.h"
+ï»¿#include "MainForm.h"
 
 namespace DrvLoader
 {
     /// <summary>
-    /// Ó¦ÓÃ³ÌĞòµÄÖ÷Èë¿Úµã¡£
+    /// åº”ç”¨ç¨‹åºçš„ä¸»å…¥å£ç‚¹ã€‚
     /// </summary>
     [STAThread]
     void main(array<String^>^ args)

@@ -32,4 +32,4 @@ namespace DrvLoader
 
         friend inline void AppendErrInfo(PWSTR msg, DWORD errCode, PCWSTR end);
     };
-} // namespace DrvLoader
+}

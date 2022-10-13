@@ -1,26 +1,27 @@
-#include "SrvUtils.h"
+﻿#include "SrvUtils.h"
 
 using namespace DrvLoader;
 
-std::unordered_map<DWORD, PCWSTR> SrvUtils::expected_err = {
-	{ERROR_PATH_NOT_FOUND, TEXT("找不到服务二进制文件。")},
-	{ERROR_ACCESS_DENIED, TEXT("拒绝访问。")},
-	{ERROR_INVALID_NAME, TEXT("指定的服务名无效。")},
-	{ERROR_BAD_EXE_FORMAT, TEXT("指定的二进制文件无效。")},
-	{ERROR_DEPENDENT_SERVICES_RUNNING, TEXT("有依赖于此服务的组件正在运行。")},
-	{ERROR_SERVICE_ALREADY_RUNNING, TEXT("服务的实例已在运行。")},
-	{ERROR_SERVICE_DISABLED, TEXT("服务已被禁用。")},
-	{ERROR_SERVICE_DOES_NOT_EXIST, TEXT("指定的服务不存在。")},
-	{ERROR_SERVICE_CANNOT_ACCEPT_CTRL, TEXT("服务无法在此时接受控制信息。服务可能已停止/正在停止/正在启动。")},
-	{ERROR_SERVICE_NOT_ACTIVE, TEXT("服务尚未启动。")},
-	{ERROR_SERVICE_MARKED_FOR_DELETE, TEXT("服务已标记为删除。")},
-	{ERROR_NO_MSG, TEXT("")}
+std::unordered_map<DWORD, PCWSTR>				SrvUtils::expected_err =
+{
+	{ERROR_PATH_NOT_FOUND,				TEXT("找不到服务二进制文件。")},
+	{ERROR_ACCESS_DENIED,				TEXT("拒绝访问。")},
+	{ERROR_INVALID_NAME,				TEXT("指定的服务名无效。")},
+	{ERROR_BAD_EXE_FORMAT,				TEXT("指定的二进制文件无效。")},
+	{ERROR_DEPENDENT_SERVICES_RUNNING,	TEXT("有依赖于此服务的组件正在运行。")},
+	{ERROR_SERVICE_ALREADY_RUNNING,		TEXT("服务的实例已在运行。")},
+	{ERROR_SERVICE_DISABLED,			TEXT("服务已被禁用。")},
+	{ERROR_SERVICE_DOES_NOT_EXIST,		TEXT("指定的服务不存在。")},
+	{ERROR_SERVICE_CANNOT_ACCEPT_CTRL,	TEXT("服务无法在此时接受控制信息。服务可能已停止/正在停止/正在启动。")},
+	{ERROR_SERVICE_NOT_ACTIVE,			TEXT("服务尚未启动。")},
+	{ERROR_SERVICE_MARKED_FOR_DELETE,	TEXT("服务已标记为删除。")},
+	{ERROR_NO_MSG,						TEXT("")}
 };
-std::unordered_map<DWORD, PCWSTR>::iterator SrvUtils::errIter;
-std::unordered_map<PWSTR, SC_HANDLE> SrvUtils::hSrvMap;
-std::unordered_map<PWSTR, SC_HANDLE>::iterator SrvUtils::srvIter;
+std::unordered_map<DWORD, PCWSTR>::iterator		SrvUtils::errIter;
+std::unordered_map<PWSTR, SC_HANDLE>			SrvUtils::hSrvMap;
+std::unordered_map<PWSTR, SC_HANDLE>::iterator	SrvUtils::srvIter;
 
-SC_HANDLE SrvUtils::hSCManager;
+SC_HANDLE										SrvUtils::hSCManager;
 
 STATUS SrvUtils::OpenSrv(SC_HANDLE& hService, PWSTR srvName, OPTIONAL ULONG Access = SERVICE_ALL_ACCESS)
 {
@@ -401,7 +402,7 @@ STATUS SrvUtils::Stop(PWSTR srvName, OPTIONAL BOOL force)
 		return ret;
 	}
 
-	SERVICE_STATUS srvStatus = {0};
+	SERVICE_STATUS srvStatus = { 0 };
 
 	if (!ControlService(hService, SERVICE_CONTROL_STOP, &srvStatus))
 	{
@@ -442,7 +443,7 @@ STATUS SrvUtils::Delete(PWSTR srvName, OPTIONAL BOOL force)
 
 STATUS SrvUtils::Clear()
 {
-	SERVICE_STATUS srvStatus = {0};
+	SERVICE_STATUS srvStatus = { 0 };
 	for (srvIter = hSrvMap.begin(); srvIter != hSrvMap.end(); ++srvIter)
 	{
 		ControlService(srvIter->second, SERVICE_CONTROL_STOP, &srvStatus);

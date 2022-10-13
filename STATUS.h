@@ -44,59 +44,59 @@ namespace DrvLoader
 #pragma region wcsapp
 
 	template <typename P, typename Q, typename...R>
-	inline void wcsapp(P p, Q q, R ...rs)
+	inline void wcsapp(P, Q, R ...)
 	{
-		static_assert(0, "[wcsapp] Argument type mismatch.");
+		throw "Argument type mismatch.";
 	}
 
 	template <size_t __Size, typename...R>
-	inline void wcsapp(WCHAR (&_Destination)[__Size], PCWSTR _Source, R ..._res)
+	inline void wcsapp(WCHAR(&_Destination)[__Size], PCWSTR _Source, R ..._res)
 	{
 		wcscat_s(_Destination, _Source);
 		wcsapp(_Destination, _res...);
 	}
 
 	template <size_t __Size, typename...R>
-	inline void wcsapp(WCHAR (&_Destination)[__Size], PWSTR _Source, R ..._res)
+	inline void wcsapp(WCHAR(&_Destination)[__Size], PWSTR _Source, R ..._res)
 	{
 		wcscat_s(_Destination, _Source);
 		wcsapp(_Destination, _res...);
 	}
 
 	template <size_t __Size>
-	inline void wcsapp(WCHAR (&_Destination)[__Size], PCWSTR _Source)
+	inline void wcsapp(WCHAR(&_Destination)[__Size], PCWSTR _Source)
 	{
 		wcscat_s(_Destination, _Source);
 	}
 
 	template <size_t __Size>
-	inline void wcsapp(WCHAR (&_Destination)[__Size], PWSTR _Source)
+	inline void wcsapp(WCHAR(&_Destination)[__Size], PWSTR _Source)
 	{
 		wcscat_s(_Destination, _Source);
 	}
 
 	template <typename...R>
-	inline void wcsapp(PWSTR (&_Destination), size_t _SizeInWords, PCWSTR _Source, R ..._res)
+	inline void wcsapp(PWSTR(&_Destination), size_t _SizeInWords, PCWSTR _Source, R ..._res)
 	{
 		wcscat_s(_Destination, _SizeInWords, _Source);
 		wcsapp(_Destination, _SizeInWords - wcslen(_Source), _res...);
 	}
 
 	template <typename...R>
-	inline void wcsapp(PWSTR (&_Destination), size_t _SizeInWords, PWSTR _Source, R ..._res)
+	inline void wcsapp(PWSTR(&_Destination), size_t _SizeInWords, PWSTR _Source, R ..._res)
 	{
 		wcscat_s(_Destination, _SizeInWords, _Source);
 		wcsapp(_Destination, _SizeInWords - wcslen(_Source), _res...);
 	}
 
 	template <>
-	inline void wcsapp(PWSTR (&_Destination), size_t _SizeInWords, PCWSTR _Source)
+	inline void wcsapp(PWSTR(&_Destination), size_t _SizeInWords, PCWSTR _Source)
 	{
 		wcscat_s(_Destination, _SizeInWords, _Source);
 	}
 
 	template <>
-	inline void wcsapp(PWSTR (&_Destination), size_t _SizeInWords, PWSTR _Source)
+	inline void wcsapp(PWSTR(&_Destination), size_t _SizeInWords, PWSTR _Source)
 	{
 		wcscat_s(_Destination, _SizeInWords, _Source);
 	}

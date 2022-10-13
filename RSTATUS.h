@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "SrvUtils.h"
 
 // 最大路径长度
@@ -7,32 +7,27 @@
 #define __MAX_NAME__ 256L
 
 #define ThrowIfFailed(x)                         \
-    do{                                          \
-        RSTATUS^ CONCAT(__ret_, __LINE__) = (gcnew RSTATUS(x));   \
-        if (!CONCAT(__ret_, __LINE__)->Success) \
-        {                                        \
-            throw CONCAT(__ret_, __LINE__);      \
-        }                                        \
-    delete CONCAT(__ret_, __LINE__);            \
-    CONCAT(__ret_, __LINE__) = nullptr;         \
-    }while(0)
+	do{                                          \
+		RSTATUS^ CONCAT(__ret_, __LINE__) = (gcnew RSTATUS(x));   \
+		if (!CONCAT(__ret_, __LINE__)->Success) \
+		{                                        \
+			throw CONCAT(__ret_, __LINE__);      \
+		}                                        \
+	delete CONCAT(__ret_, __LINE__);            \
+	CONCAT(__ret_, __LINE__) = nullptr;         \
+	}while(0)
 
 #define CatchDisplay(...)  \
   catch (RSTATUS^ ret)     \
   {                        \
-    DisplayException(ret); \
-    __VA_ARGS__            \
-    delete ret;            \
-    ret = nullptr;         \
+	DisplayException(ret); \
+	__VA_ARGS__            \
+	delete ret;            \
+	ret = nullptr;         \
   }                        \
   do                       \
   {                        \
   } while (0) // 保证末尾需要分号
-
-#define __LEFT_BRACKET (
-#define __RIGHT_BRACKET )
-
-#define __DEL_COMMA(...) , ##__VA_ARGS__
 
 #define __SELECT_ARG32(                     \
 	_0, _1, _2, _3, _4, _5, _6, _7,         \
@@ -40,20 +35,19 @@
 	_16, _17, _18, _19, _20, _21, _22, _23, \
 	_24, _25, _26, _27, _28, _29, _30, _31, ...) _31
 
-#define __SELECT_FUN(_0, _1, ...)       \
-    __SELECT_ARG32 __LEFT_BRACKET       \
-        __DEL_COMMA(__VA_ARGS__),       \
-        _1, _1, _1, _1, _1, _1, _1, _1, \
-        _1, _1, _1, _1, _1, _1, _1, _1, \
-        _1, _1, _1, _1, _1, _1, _1, _1, \
-        _1, _1, _1, _1, _1, _1, _0,     \
-        __RIGHT_BRACKET
+#define __APPLY_FUN(FUN, ARGS) FUN ARGS
 
-#define __LogTo0(x, msg) (x->AppendText(msg))
-#define __LogTo1(x, msg, ...) (x->AppendText(System::String::Format(msg, __VA_ARGS__)))
-#define Log(msg, ...)                             \
-    __SELECT_FUN(__LogTo0, __LogTo1, __VA_ARGS__) \
-    (txtLog, msg, __VA_ARGS__)
+#define __SELECT_FUN(_0, _1, _2, ...)       \
+	__APPLY_FUN(__SELECT_ARG32, ( __VA_ARGS__,       \
+		_2, _2, _2, _2, _2, _2, _2, _2, \
+		_2, _2, _2, _2, _2, _2, _2, _2, \
+		_2, _2, _2, _2, _2, _2, _2, _2, \
+		_2, _2, _2, _2, _2, _2, _1, _0 ))
+
+#define __LOG_1(x, msg) ((x)->AppendText(msg))
+#define __LOG_2(x, msg, ...) ((x)->AppendText(System::String::Format(msg, __VA_ARGS__)))
+
+#define LOG(...) __SELECT_FUN(NO_MESSAGE_PROVIDED, __LOG_1, __LOG_2, __VA_ARGS__)(txtLog, __VA_ARGS__)
 
 namespace DrvLoader
 {
@@ -72,7 +66,7 @@ namespace DrvLoader
 		{
 			DWORD get();
 		};
-		operator String^();
+		operator String ^ ();
 	private:
 		DWORD exitCode;
 		String^ msg;

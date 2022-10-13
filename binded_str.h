@@ -25,4 +25,4 @@ namespace DrvLoader
             size_t get();
         };
     };
-} // namespace DrvLoader
+}
